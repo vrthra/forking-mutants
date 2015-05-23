@@ -8,7 +8,8 @@ $children = []
 $mutant = 0 # parent
 
 $operators=[
-  [:==, :!=]
+  [:==, :!=],
+  [:'|', :'&']
 ]
 
 $hash = {}
@@ -21,16 +22,16 @@ end
 def triangle(a, b, c)
   if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
     return :notriangle
-  elsif (mutate(a, b, 1, :==) && mutate(a, c, 2, :==) && mutate(b, c, 3, :==))
+  elsif mutate(1, mutate(2, mutate(3, a, b, :==), mutate(4, a, c, :==), :'&'), mutate(5, b, c, :==), :'&')
     return :equilateral
-  elsif (mutate(a, b, 4, :==) || mutate(a, c, 5, :==) || mutate(b, c, 6, :==))
+  elsif mutate(6, mutate(7, mutate(8, a, b, :==), mutate(9, a, c, :==), :'|'), mutate(10, b, c, :==), :'|')
     return :isosceles
   else
     return :scalene
   end
 end
 
-def mutate(a, b, mutant, op)
+def mutate(mutant, a, b, op)
   if is_parent?
     if not($decision_register[mutant].nil?)
       # this decision has already been made.
