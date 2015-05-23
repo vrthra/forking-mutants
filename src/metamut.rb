@@ -24,14 +24,15 @@ def mutate(a, b, mutant, op)
   case $parent_or_child
   when :parent
     if $decision_register[mutant].nil?
-      $decision_register[mutant] = :!=
       child_id = fork
       if child_id.nil?
+        $decision_register[mutant] = :!=
         $parent_or_child = :child
         $mutant = mutant
         # first time mutate, always
         return a.send($decision_register[mutant], b)
       else
+        $decision_register[mutant] = op
         $children << child_id
         puts "forking #{child_id}"
         return a.send(op, b) # parent is always correct
