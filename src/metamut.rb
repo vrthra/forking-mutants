@@ -8,9 +8,14 @@ $operators=[
   [:==, :!=]
 ]
 
+$hash = {
+  :== => [:!=],
+  :!= => [:==],
+}
+
 def triangle(a, b, c)
   if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
-    return :nottriangle
+    return :notriangle
   elsif (mutate(a, b, 1, :==) && mutate(a, c, 2, :==) && mutate(b, c, 3, :==))
     return :equilateral
   elsif (mutate(a, b, 4, :==) || mutate(a, c, 5, :==) || mutate(b, c, 6, :==))
@@ -23,53 +28,55 @@ end
 def mutate(a, b, mutant, op)
   case $parent_or_child
   when :parent
-    if $decision_register[mutant].nil?
-      child_id = fork
-      if child_id.nil?
-        $decision_register[mutant] = :!=
-        $parent_or_child = :child
-        $mutant = mutant
-        # first time mutate, always
-        return a.send($decision_register[mutant], b)
-      else
-        $decision_register[mutant] = op
-        $children << child_id
-        puts "forking #{child_id}"
-        return a.send(op, b) # parent is always correct
-      end
-    else
+    if not($decision_register[mutant].nil?)
       # this decision has already been made.
       return a.send(op, b)
     end
-  when :child
-    if $decision_register[mutant].nil?
-      return a.send(op,b)
-    else
-      return a.send($decision_register[mutant], b)
+    opts = $hash[op]
+    opts.each do |o|
+      child_id = fork
+      if child_id.nil?
+        $decision_register[mutant] = o
+        $parent_or_child = :child
+        $mutant = mutant
+        return a.send($decision_register[mutant], b)
+      else
+        puts "forking #{child_id}"
+        $children << child_id
+      end
     end
+    $decision_register[mutant] = op
+    return a.send(op, b) # parent is always correct
+  when :child
+    o = $decision_register[mutant] || op
+    return a.send(o,b)
   end
 end
 
 def testit(&t)
+  mutant_name = "log/_" + $mutant.to_s +
+    '.' + $decision_register[$mutant].object_id.to_s +
+    "_"
   begin
     t.call()
-    file = "log/_" + $mutant.to_s + "_" + Process.pid.to_s + ".alive"
+    file = mutant_name + Process.pid.to_s + ".alive"
     if $mypid != Process.pid
       File.open(file,'w+') do |f|
-        f.puts $decision_register.to_s
+        f.puts "#{$mutant} #{$decision_register[$mutant]}"
       end
     end
   rescue => e
     file = ''
-    if $mypid == Process.pid
-      file = "parent" + ".log"
+    if Process.pid == $mypid
+      file = "parent_" + $mypid.to_s + ".log"
     else
-      file = "log/_" + $mutant.to_s + "_" + Process.pid.to_s + ".dead"
+      file = mutant_name + Process.pid.to_s + ".dead"
     end
-    File.open(file, 'w+') do |f|
+    File.open(file, 'a+') do |f|
+      f.puts "#{$mutant} #{$decision_register[$mutant]}"
+      f.puts $decision_register.to_s
       f.puts e.message
       f.puts e.backtrace
-      f.puts $decision_register.to_s
     end
   end
 
