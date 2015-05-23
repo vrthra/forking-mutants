@@ -1,5 +1,8 @@
 $mypid = Process.pid
-$parent_or_child = :parent
+def is_parent?
+  $mypid == Process.pid
+end
+
 $decision_register = {}
 $children = []
 $mutant = 0 # parent
@@ -8,10 +11,12 @@ $operators=[
   [:==, :!=]
 ]
 
-$hash = {
-  :== => [:!=],
-  :!= => [:==],
-}
+$hash = {}
+$operators.each do |lst|
+  lst.each do |o|
+    $hash[o] = lst - [o]
+  end
+end
 
 def triangle(a, b, c)
   if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
@@ -26,8 +31,7 @@ def triangle(a, b, c)
 end
 
 def mutate(a, b, mutant, op)
-  case $parent_or_child
-  when :parent
+  if is_parent?
     if not($decision_register[mutant].nil?)
       # this decision has already been made.
       return a.send(op, b)
@@ -37,17 +41,15 @@ def mutate(a, b, mutant, op)
       child_id = fork
       if child_id.nil?
         $decision_register[mutant] = o
-        $parent_or_child = :child
         $mutant = mutant
         return a.send($decision_register[mutant], b)
       else
-        puts "forking #{child_id}"
         $children << child_id
       end
     end
     $decision_register[mutant] = op
     return a.send(op, b) # parent is always correct
-  when :child
+  else # child
     o = $decision_register[mutant] || op
     return a.send(o,b)
   end
@@ -80,8 +82,9 @@ def testit(&t)
     end
   end
 
-  if $parent_or_child == :parent
+  if is_parent?
     $children.each do |p|
+      puts "waiting #{p}"
       Process.wait p
     end
   end
