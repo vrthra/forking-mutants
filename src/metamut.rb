@@ -9,7 +9,9 @@ $mutant = 0 # parent
 
 $operators=[
   [:==, :!=],
-  [:'|', :'&']
+  [:'|', :'&'],
+  [:'+', :'-'],
+  [:'<=', :'>='],
 ]
 
 $hash = {}
@@ -20,16 +22,28 @@ $operators.each do |lst|
 end
 
 def triangle(a, b, c)
-  if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
+  if mutate(1, mutate(2, (mutate(3, (mutate(4, a, b, :"+")), c, :"<=")), (mutate(5, (mutate(6, a, c, :"+")), b, :"<=")), :"|"), (mutate(7, (mutate(8, b, c, :"+")), a, :"<=")), :"|")
     return :notriangle
-  elsif mutate(1, mutate(2, mutate(3, a, b, :==), mutate(4, a, c, :==), :'&'), mutate(5, b, c, :==), :'&')
+  elsif (mutate(9, mutate(10, (mutate(11, a, b, :"==")), (mutate(12, a, c, :"==")), :"&"), (mutate(13, b, c, :"==")), :"&"))
     return :equilateral
-  elsif mutate(6, mutate(7, mutate(8, a, b, :==), mutate(9, a, c, :==), :'|'), mutate(10, b, c, :==), :'|')
+  elsif (mutate(14, mutate(15, (mutate(16, a, b, :"==")), (mutate(17, a, c, :"==")), :"|"), (mutate(18, b, c, :"==")), :"|"))
     return :isosceles
   else
     return :scalene
   end
 end
+
+# def triangle(a, b, c)
+#   if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
+#     return :notriangle
+#   elsif mutate(1, mutate(2, mutate(3, a, b, :==), mutate(4, a, c, :==), :'&'), mutate(5, b, c, :==), :'&')
+#     return :equilateral
+#   elsif mutate(6, mutate(7, mutate(8, a, b, :==), mutate(9, a, c, :==), :'|'), mutate(10, b, c, :==), :'|')
+#     return :isosceles
+#   else
+#     return :scalene
+#   end
+# end
 
 def mutate(mutant, a, b, op)
   if is_parent?
