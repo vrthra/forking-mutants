@@ -33,18 +33,6 @@ def triangle(a, b, c)
   end
 end
 
-# def triangle(a, b, c)
-#   if ((a + b) <= c) || ((a + c) <= b) || ((b + c) <= a)
-#     return :notriangle
-#   elsif mutate(1, mutate(2, mutate(3, a, b, :==), mutate(4, a, c, :==), :'&'), mutate(5, b, c, :==), :'&')
-#     return :equilateral
-#   elsif mutate(6, mutate(7, mutate(8, a, b, :==), mutate(9, a, c, :==), :'|'), mutate(10, b, c, :==), :'|')
-#     return :isosceles
-#   else
-#     return :scalene
-#   end
-# end
-
 def mutate(mutant, a, b, op)
   if is_parent?
     if not($decision_register[mutant].nil?)
