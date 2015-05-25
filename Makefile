@@ -1,4 +1,5 @@
 server:
+	@echo Mutants = $$(ruby ./src/mutate.rb -count ./src/triangle.rb)
 	ruby src/controller.rb
 
 client:

@@ -27,7 +27,7 @@ class Db
     end
   end
   def score
-    "#{@mutants.values.inject(0,:+)}/#{@mutants.values.length}"
+    "#{@mutants.values.inject(0,:+)}"
   end
   def bye
     @bye += 1

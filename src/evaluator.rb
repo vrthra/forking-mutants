@@ -36,6 +36,14 @@ class Evaluator
         if child_id.nil?
           @decision_register[mutant] = o
           @drb_m = DRbObject.new(nil, @host)
+          while true
+            begin
+              @drb_m.killed?(0)
+              break
+            rescue DRb::DRbConnError => e
+              sleep 1
+            end
+          end
           @mutant = mutant
           if @drb_m.killed?(@mutant)
             # dont continue if this has already been killed
