@@ -2,7 +2,6 @@ $LOAD_PATH.unshift('./src')
 require 'drb'
 require 'mutator'
 
-$host = ENV['MHOST'] || 'localhost:9000'
 $operators=[
   [:==, :!=],
   [:'|', :'&'],
@@ -18,12 +17,13 @@ $operators.each do |lst|
 end
 
 class Evaluator
-  def initialize
+  def initialize(host)
     @drb_m = nil
     @mypid = Process.pid
     @decision_register = {}
     @children = []
     @mutant = 0 # parent
+    @host = host
   end
   def is_parent?
     @mypid == Process.pid
@@ -39,7 +39,7 @@ class Evaluator
         child_id = fork
         if child_id.nil?
           @decision_register[mutant] = o
-          @drb_m = DRbObject.new(nil, "druby://#{$host}")
+          @drb_m = DRbObject.new(nil, "druby://#{@host}")
           @mutant = mutant
           if @drb_m.killed?(@mutant)
             # dont continue if this has already been killed
@@ -76,12 +76,13 @@ class Evaluator
         puts "waiting #{p}"
         Process.wait p
       end
-      DRbObject.new(nil, "druby://#{$host}").bye
+      DRbObject.new(nil, "druby://#{@host}").bye
     end
   end
 end
 
-$e = Evaluator.new()
+$host = ENV['MHOST'] || 'localhost:9000'
+$e = Evaluator.new($host)
 def mutate(mutant, a, b, op)
   $e.mutate(mutant, a, b, op)
 end
