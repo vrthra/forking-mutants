@@ -3,9 +3,11 @@ require 'thread'
  
 
 class Db
-  def initialize
+  def initialize(tsts)
     @mutants = {}
     @mutex = Mutex.new
+    @hai = tsts
+    @bye = 0
   end
   def has?(m)
     not(@mutants[m].nil?)
@@ -20,25 +22,42 @@ class Db
   end
   def killed(m)
     @mutex.synchronize do
-      STDERR.puts "killed #{m} (new: #{@mutants[m].nil?})"
+      if @mutants[m].nil?
+        STDERR.puts "killed #{m}"
+      else
+        puts "\t#{m} + #{@mutants[m]}"
+      end
       @mutants[m] = 1
     end
   end
   def score
     "#{@mutants.values.inject(0,:+)}/#{@mutants.values.length}"
   end
+  def bye
+    @bye += 1
+  end
+  def wait
+    if @hai == 0
+      DRb.thread.join
+    else
+      while @bye < @hai
+        sleep 1
+      end
+      quit
+    end
+  end
+
+  def quit
+    DRb.stop_service
+    puts "Mutation Score = #{score}"
+    exit(0)
+  end
 end
 
-$db = Db.new
- 
-# Start the service
+$db = Db.new(ARGV[0].to_i)
 DRb.start_service('druby://localhost:9000', $db)
- 
-# Make the main thread wait for the DRb thread,
-# otherwise the script execution would already end here.
 trap("SIGINT") do
-  DRb.stop_service
   puts ""
-  puts "Mutation Score = #{$db.score}"
+  $db.quit
 end
-DRb.thread.join
+$db.wait
