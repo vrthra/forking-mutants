@@ -2,8 +2,8 @@ $LOAD_PATH.unshift('./src')
 require 'mutator'
 require 'evaluator'
 
-$host = ENV['MHOST'] || 'localhost:9000'
-$e = Evaluator.new($host)
+host = ENV['MHOST'] || 'localhost:9000'
+$e = Evaluator.new(host)
 def mutate(mutant, a, b, op)
   $e.mutate(mutant, a, b, op)
 end
