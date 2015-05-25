@@ -1,6 +1,7 @@
 require 'drb'
 require 'thread'
  
+$host = ENV['MHOST'] || 'localhost:9000'
 
 class Db
   def initialize(tsts)
@@ -55,7 +56,7 @@ class Db
 end
 
 $db = Db.new(ARGV[0].to_i)
-DRb.start_service('druby://localhost:9000', $db)
+DRb.start_service("druby://#{$host}", $db)
 trap("SIGINT") do
   puts ""
   $db.quit

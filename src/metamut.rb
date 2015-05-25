@@ -1,9 +1,8 @@
 $LOAD_PATH.unshift('./src')
 require 'drb'
 require 'mutator'
-require 'triangle_m'
-require 'tests'
 
+$host = ENV['MHOST'] || 'localhost:9000'
 $operators=[
   [:==, :!=],
   [:'|', :'&'],
@@ -40,7 +39,7 @@ class Evaluator
         child_id = fork
         if child_id.nil?
           @decision_register[mutant] = o
-          @drb_m = DRbObject.new(nil, 'druby://localhost:9000')
+          @drb_m = DRbObject.new(nil, "druby://#{$host}")
           @mutant = mutant
           if @drb_m.killed?(@mutant)
             # dont continue if this has already been killed
@@ -77,7 +76,7 @@ class Evaluator
         puts "waiting #{p}"
         Process.wait p
       end
-      DRbObject.new(nil, 'druby://localhost:9000').bye
+      DRbObject.new(nil, "druby://#{$host}").bye
     end
   end
 end
@@ -91,8 +90,8 @@ original = ARGV[0]
 test = ARGV[1]
 testarg = ARGV[2]
 
-#eval(Mutator.new(original).updated)
-#eval(File.read(test))
+eval(File.read(test))
+eval(Mutator.new(original).updated)
 
 $e.testit do |m|
   testmain(testarg, m)
