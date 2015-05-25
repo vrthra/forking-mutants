@@ -8,14 +8,13 @@ def mutate(mutant, a, b, op)
   $e.mutate(mutant, a, b, op)
 end
 
-original = ARGV[0]
-test = ARGV[1]
-testarg = ARGV[2]
-
-eval(File.read(test))
-eval(Mutator.new(original).updated)
-
-$e.testit do |m|
-  testmain(testarg, m)
+def main(original, test, arg)
+  eval(File.read(test), TOPLEVEL_BINDING)
+  eval(Mutator.new(original).updated, TOPLEVEL_BINDING)
+  $e.testit do |m|
+    testmain(arg, m)
+  end
 end
+
+main(ARGV[0], ARGV[1], ARGV[2])
 
