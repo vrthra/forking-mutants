@@ -3,7 +3,7 @@ require 'sorcerer'
 
 class Mutator
   def initialize(srcf)
-    @count = 1
+    @count = 0
     src = File.read(srcf)
     sexp = Ripper::SexpBuilder.new(src).parse
     @newsrc = Sorcerer.source(transform(sexp), multiline: true, indent: true)
@@ -32,6 +32,7 @@ class Mutator
 
   def modify(sexp)
     b, arg1, op, arg2 = *sexp
+    @count += 1
     news = [:method_add_arg,
             [:fcall, [:@ident, "mutate", [1, 0]]],
             [:arg_paren,
@@ -41,9 +42,10 @@ class Mutator
                  [:dyna_symbol, [:xstring_add, [:xstring_new],
                                  [:@tstring_content, op.to_s, [1, 17]]]]],
               false]]]
-    @count += 1
     news
+  end
+  def counter
+    @count
   end
 end
 
-#puts Mutator.new('src/triangle.rb').updated
