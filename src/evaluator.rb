@@ -1,12 +1,12 @@
 require 'drb'
 class Evaluator
   def initialize(host)
+    @host = "druby://#{host}"
     @drb_m = nil
     @mypid = Process.pid
     @decision_register = {}
     @children = []
     @mutant = 0 # parent
-    @host = host
     operators=[
       [:==, :!=],
       [:'|', :'&'],
@@ -35,7 +35,7 @@ class Evaluator
         child_id = fork
         if child_id.nil?
           @decision_register[mutant] = o
-          @drb_m = DRbObject.new(nil, "druby://#{@host}")
+          @drb_m = DRbObject.new(nil, @host)
           @mutant = mutant
           if @drb_m.killed?(@mutant)
             # dont continue if this has already been killed
@@ -58,6 +58,7 @@ class Evaluator
     begin
       t.call(@mutant)
     rescue => e
+      # TODO: remove this.
       if e.message !~ /equilateral|isosceles|scalene|notriangle|killed/
         puts e.message
         puts e.backtrace
@@ -72,7 +73,7 @@ class Evaluator
         puts "waiting #{p}"
         Process.wait p
       end
-      DRbObject.new(nil, "druby://#{@host}").bye
+      DRbObject.new(nil, @host).bye
     end
   end
 end
