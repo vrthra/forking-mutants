@@ -20,6 +20,7 @@ class Db
   end
   def killed(m)
     @mutex.synchronize do
+      STDERR.puts "killed #{m} (new: #{@mutants[m].nil?})"
       @mutants[m] = 1
     end
   end

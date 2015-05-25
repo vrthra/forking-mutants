@@ -1,3 +1,4 @@
+require 'drb'
 $mypid = Process.pid
 def is_parent?
   $mypid == Process.pid
@@ -33,6 +34,7 @@ def triangle(a, b, c)
   end
 end
 
+$drb_m = nil
 def mutate(mutant, a, b, op)
   if is_parent?
     if not($decision_register[mutant].nil?)
@@ -44,6 +46,11 @@ def mutate(mutant, a, b, op)
       child_id = fork
       if child_id.nil?
         $decision_register[mutant] = o
+        $drb_m = DRbObject.new(nil, 'druby://localhost:9000')
+        if $drb_m.killed?(mutant)
+          # dont continue if this has already been killed
+          exit(0)
+        end
         $mutant = mutant
         return a.send($decision_register[mutant], b)
       else
@@ -75,6 +82,7 @@ def testit(&t)
     if Process.pid == $mypid
       file = "parent_" + $mypid.to_s + ".log"
     else
+      $drb_m.killed($mutant)
       file = mutant_name + Process.pid.to_s + ".dead"
     end
     File.open(file, 'a+') do |f|
@@ -93,35 +101,57 @@ def testit(&t)
   end
 end
 
+class MainTester
+  def MainTester.test_equilateral_triangles_have_equal_sides
+    :equilateral == triangle(2, 2, 2) or raise "Equilateral 1 #{$mutant}"
+    :equilateral == triangle(10, 10, 10) or raise "Equilateral 2 #{$mutant}"
+  end
 
-def test_equilateral_triangles_have_equal_sides
-  :equilateral == triangle(2, 2, 2) or raise "Equilateral 1 #{$mutant}"
-  :equilateral == triangle(10, 10, 10) or raise "Equilateral 2 #{$mutant}"
-end
+  def MainTester.test_isosceles_triangles_have_exactly_two_sides_equal
+    :isosceles == triangle(3, 4, 4) or raise "Isosceles 1 #{$mutant}"
+    :isosceles == triangle(4, 3, 4) or raise "Isosceles 2 #{$mutant}"
+    :isosceles == triangle(4, 4, 3) or raise "Isosceles 3 #{$mutant}"
+    :isosceles == triangle(10, 10, 2) or raise "Isosceles 4 #{$mutant}"
+  end
 
-def test_isosceles_triangles_have_exactly_two_sides_equal
-  :isosceles == triangle(3, 4, 4) or raise "Isosceles 1 #{$mutant}"
-  :isosceles == triangle(4, 3, 4) or raise "Isosceles 2 #{$mutant}"
-  :isosceles == triangle(4, 4, 3) or raise "Isosceles 3 #{$mutant}"
-  :isosceles == triangle(10, 10, 2) or raise "Isosceles 4 #{$mutant}"
-end
+  def MainTester.test_scalene_triangles_have_no_equal_sides
+    :scalene == triangle(3, 4, 5) or raise "Scalene 1 #{$mutant}"
+    :scalene == triangle(10, 11, 12) or raise "Scalene 2 #{$mutant}"
+    :scalene == triangle(5, 4, 2) or raise "Scalene 3 #{$mutant}"
+  end
 
-def test_scalene_triangles_have_no_equal_sides
-  :scalene == triangle(3, 4, 5) or raise "Scalene 1 #{$mutant}"
-  :scalene == triangle(10, 11, 12) or raise "Scalene 2 #{$mutant}"
-  :scalene == triangle(5, 4, 2) or raise "Scalene 3 #{$mutant}"
-end
-
-def test_triangle
-  :notriangle == triangle(1,2,10) or raise "NoTriangle 1 #{$mutant}"
-  :notriangle == triangle(1,10,2) or raise "NoTriangle 2 #{$mutant}"
-  :notriangle == triangle(10,1,2) or raise "NoTriangle 3 #{$mutant}"
+  def MainTester.test_triangle
+    :notriangle == triangle(1,2,10) or raise "NoTriangle 1 #{$mutant}"
+    :notriangle == triangle(1,10,2) or raise "NoTriangle 2 #{$mutant}"
+    :notriangle == triangle(10,1,2) or raise "NoTriangle 3 #{$mutant}"
+  end
+  def MainTester.callit(arg)
+    case arg
+    when :test_equilateral
+      test_equilateral_triangles_have_equal_sides
+    when :test_isosceles
+      test_isosceles_triangles_have_exactly_two_sides_equal
+    when :test_scalene
+      test_scalene_triangles_have_no_equal_sides
+    else
+      test_triangle
+    end
+  end
 end
 
 testit do
-  test_equilateral_triangles_have_equal_sides
-  test_isosceles_triangles_have_exactly_two_sides_equal
-  test_scalene_triangles_have_no_equal_sides
-  test_triangle
+  puts "#{ARGV[0].to_i}"
+  case ARGV[0].to_i
+  when 0
+    MainTester.callit(:test_notriangle)
+  when 1
+    MainTester.callit(:test_equilateral)
+  when 2
+    MainTester.callit(:test_isosceles)
+  when 3
+    MainTester.callit(:test_scalene)
+  else
+    puts "#{ARGV[0]} not understood"
+  end
 end
 
