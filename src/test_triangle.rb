@@ -32,4 +32,4 @@ def testmain(tst, info)
   end
 end
 
-
+# testmain 'notriangle', 'x'
